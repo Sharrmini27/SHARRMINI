@@ -2,17 +2,31 @@ import streamlit as st
 import pandas as pd
 import random
 import numpy as np
+import io
 
 # ============================================
-# 📘 GENETIC ALGORITHM FUNCTIONS
+# 📘 EMBEDDED CSV DATA (from your uploaded file)
+# ============================================
+
+csv_data = """Type of Program,Hour 6,Hour 7,Hour 8,Hour 9,Hour 10,Hour 11,Hour 12,Hour 13,Hour 14,Hour 15,Hour 16,Hour 17,Hour 18,Hour 19,Hour 20,Hour 21,Hour 22,Hour 23
+news,0.1,0.1,0.4,0.3,0.5,0.4,0.3,0.2,0.1,0.2,0.3,0.5,0.3,0.4,0.3,0.2,0.1,0.2
+live_soccer,0.0,0.1,0.0,0.2,0.1,0.3,0.2,0.1,0.4,0.3,0.4,0.5,0.4,0.6,0.4,0.3,0.4,0.3
+movie_a,0.1,0.1,0.2,0.4,0.3,0.2,0.1,0.2,0.3,0.4,0.5,0.4,0.3,0.4,0.3,0.5,0.3,0.4
+movie_b,0.2,0.1,0.1,0.3,0.2,0.1,0.2,0.3,0.4,0.5,0.4,0.3,0.4,0.5,0.4,0.3,0.4,0.5
+reality_show,0.3,0.4,0.3,0.4,0.4,0.4,0.3,0.4,0.5,0.4,0.3,0.2,0.1,0.2,0.3,0.2,0.2,0.3
+"""
+
+df = pd.read_csv(io.StringIO(csv_data))
+
+# ============================================
+# 📘 GENETIC ALGORITHM ENGINE
 # ============================================
 
 def read_csv_to_dict(df):
-    """Convert DataFrame to dictionary {Program: [ratings]}"""
     program_ratings = {}
     for _, row in df.iterrows():
-        program = row['Type of Program']
-        ratings = row.drop('Type of Program').tolist()
+        program = row["Type of Program"]
+        ratings = row.drop("Type of Program").tolist()
         program_ratings[program] = [float(x) for x in ratings]
     return program_ratings
 
@@ -37,7 +51,7 @@ def crossover(schedule1, schedule2):
     return child1, child2
 
 
-def mutate(schedule, all_programs):
+def mutate(schedule, all_programs, mutation_strength=0.1):
     schedule_copy = schedule.copy()
     num_mutations = random.randint(1, 4)
     for _ in range(num_mutations):
@@ -89,49 +103,30 @@ def genetic_algorithm(ratings_data, all_programs, schedule_length,
 
     return best_schedule, best_fitness
 
+
 # ============================================
-# 🌐 STREAMLIT APP
+# 📺 STREAMLIT FRONT-END
 # ============================================
 
-st.title("📺 Genetic Algorithm — TV Program Scheduling Optimizer (Auto Run, No Upload Needed)")
+st.title("📺 Genetic Algorithm — TV Program Scheduling Optimizer (Auto Mode)")
 
-# Embedded default CSV data (replace this with your real table if needed)
-data = {
-    "Type of Program": ["News", "Sports", "Drama", "Comedy", "Reality"],
-    "6": [4.1, 3.8, 4.5, 3.9, 4.0],
-    "7": [4.0, 4.2, 4.6, 4.1, 4.3],
-    "8": [4.3, 4.0, 4.7, 4.2, 4.5],
-    "9": [4.5, 4.3, 4.8, 4.4, 4.7],
-    "10": [4.2, 4.4, 4.9, 4.3, 4.8],
-    "11": [4.0, 4.1, 4.7, 4.1, 4.5],
-    "12": [3.9, 4.0, 4.6, 3.9, 4.2],
-    "13": [3.8, 4.2, 4.5, 3.7, 4.1],
-    "14": [4.1, 4.3, 4.4, 3.9, 4.2],
-    "15": [4.2, 4.5, 4.6, 4.1, 4.3],
-    "16": [4.3, 4.6, 4.7, 4.2, 4.4],
-    "17": [4.4, 4.7, 4.8, 4.3, 4.5],
-    "18": [4.5, 4.8, 4.9, 4.4, 4.6],
-    "19": [4.6, 4.9, 5.0, 4.5, 4.7],
-    "20": [4.5, 4.8, 4.9, 4.4, 4.6],
-    "21": [4.3, 4.7, 4.8, 4.2, 4.5],
-    "22": [4.2, 4.6, 4.7, 4.1, 4.4],
-    "23": [4.0, 4.5, 4.6, 4.0, 4.3]
-}
+st.success("✅ Embedded dataset loaded successfully — no upload required.")
 
-df = pd.DataFrame(data)
+st.subheader("📊 Program Ratings Dataset")
+st.dataframe(df)
+
 ratings = read_csv_to_dict(df)
 all_programs = list(ratings.keys())
 all_time_slots = list(range(6, 24))
 SCHEDULE_LENGTH = len(all_time_slots)
 
-# Trials (same values)
 trials = [
     ("Trial 1", 0.8, 0.2, 0.02, 10),
     ("Trial 2", 0.7, 0.4, 0.05, 20),
-    ("Trial 3", 0.5, 0.8, 0.08, 30),
+    ("Trial 3", 0.6, 0.6, 0.08, 30),
 ]
 
-# Run all trials automatically
+# Auto-run all three trials
 for label, co, mu, noise, seed in trials:
     st.header(f"🔹 {label}")
     st.write(f"**Crossover Rate:** {co} | **Mutation Rate:** {mu}")
@@ -140,6 +135,7 @@ for label, co, mu, noise, seed in trials:
     np.random.seed(seed)
 
     noisy_ratings = add_random_noise_to_ratings(ratings, noise_strength=noise)
+
     schedule, fitness = genetic_algorithm(
         noisy_ratings, all_programs, SCHEDULE_LENGTH,
         crossover_rate=co, mutation_rate=mu
