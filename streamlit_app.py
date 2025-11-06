@@ -5,7 +5,7 @@ import numpy as np
 import io
 
 # ============================================
-# 📘 EMBEDDED CSV DATA (from your uploaded file)
+# 📘 EMBEDDED CSV DATA (Full version with 10 programs)
 # ============================================
 
 csv_data = """Type of Program,Hour 6,Hour 7,Hour 8,Hour 9,Hour 10,Hour 11,Hour 12,Hour 13,Hour 14,Hour 15,Hour 16,Hour 17,Hour 18,Hour 19,Hour 20,Hour 21,Hour 22,Hour 23
@@ -14,6 +14,11 @@ live_soccer,0.0,0.1,0.0,0.2,0.1,0.3,0.2,0.1,0.4,0.3,0.4,0.5,0.4,0.6,0.4,0.3,0.4,
 movie_a,0.1,0.1,0.2,0.4,0.3,0.2,0.1,0.2,0.3,0.4,0.5,0.4,0.3,0.4,0.3,0.5,0.3,0.4
 movie_b,0.2,0.1,0.1,0.3,0.2,0.1,0.2,0.3,0.4,0.5,0.4,0.3,0.4,0.5,0.4,0.3,0.4,0.5
 reality_show,0.3,0.4,0.3,0.4,0.4,0.4,0.3,0.4,0.5,0.4,0.3,0.2,0.1,0.2,0.3,0.2,0.2,0.3
+talk_show,0.2,0.3,0.4,0.3,0.4,0.3,0.2,0.3,0.2,0.3,0.4,0.5,0.4,0.3,0.4,0.5,0.3,0.4
+documentary,0.1,0.2,0.3,0.2,0.3,0.4,0.5,0.3,0.4,0.3,0.2,0.1,0.3,0.4,0.5,0.4,0.3,0.4
+cooking_show,0.3,0.4,0.5,0.4,0.3,0.4,0.3,0.4,0.3,0.2,0.3,0.4,0.5,0.4,0.3,0.2,0.3,0.4
+music_program,0.4,0.5,0.6,0.5,0.4,0.3,0.4,0.5,0.4,0.3,0.2,0.3,0.4,0.3,0.4,0.5,0.4,0.3
+boxing,0.2,0.3,0.4,0.3,0.2,0.4,0.3,0.4,0.3,0.2,0.3,0.4,0.5,0.4,0.3,0.2,0.3,0.4
 """
 
 df = pd.read_csv(io.StringIO(csv_data))
@@ -110,7 +115,7 @@ def genetic_algorithm(ratings_data, all_programs, schedule_length,
 
 st.title("📺 Genetic Algorithm — TV Program Scheduling Optimizer (Auto Mode)")
 
-st.success("✅ Embedded dataset loaded successfully — no upload required.")
+st.success("✅ Embedded dataset with 10 programs loaded successfully — no upload required.")
 
 st.subheader("📊 Program Ratings Dataset")
 st.dataframe(df)
