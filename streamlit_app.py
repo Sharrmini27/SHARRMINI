@@ -3,23 +3,21 @@ import pandas as pd
 import random
 import numpy as np
 import io
+import os
 
 # ============================================
 # 📘 GENETIC ALGORITHM ENGINE
 # ============================================
 
-def read_csv_to_dict(uploaded_file):
-    """Reads uploaded CSV (from Streamlit uploader) and returns {Program: [ratings]}"""
+def read_csv_to_dict(file):
+    """Reads CSV (uploaded or local) and returns {Program: [ratings]}"""
     program_ratings = {}
     try:
-        uploaded_file.seek(0)  # Reset pointer to start
-        df = pd.read_csv(io.StringIO(uploaded_file.getvalue().decode("utf-8")))
-
+        df = pd.read_csv(file)
         for _, row in df.iterrows():
             program = row['Type of Program']
             ratings = row.drop('Type of Program').tolist()
             program_ratings[program] = [float(x) for x in ratings]
-
     except Exception as e:
         st.error(f"Error reading CSV: {e}")
     return program_ratings
@@ -58,7 +56,7 @@ def mutate(schedule, all_programs):
 
 
 def add_random_noise_to_ratings(ratings_data, noise_strength=0.05):
-    """Adds small noise to ratings for variety between trials."""
+    """Adds small noise to ratings for variation between trials."""
     noisy_data = {}
     for k, v in ratings_data.items():
         noisy_data[k] = [max(0, min(1, x + random.uniform(-noise_strength, noise_strength))) for x in v]
@@ -111,30 +109,38 @@ st.title("📺 Genetic Algorithm — TV Program Scheduling Optimizer")
 
 st.info("""
 ### 🧾 Instructions
-1. Upload your **`program_ratings.csv`** file using the uploader below.  
-2. The file must have:
-   - First column: **Type of Program**
-   - Next columns: **Hour 6** to **Hour 23**
-3. Click **“🚀 Run All 3 Trials”** to compare different GA configurations.
+1. If you have your own CSV, upload it below.  
+2. Otherwise, the app will automatically use the default **`program_ratings.csv`** file.  
+3. Each row should contain the program name followed by ratings for each time slot (6–23).  
+4. Click **“🚀 Run All 3 Trials”** to see the optimized schedules and fitness scores.
 """)
 
+# Try to read local CSV automatically if no upload is provided
+default_path = "program_ratings.csv"
 uploaded_file = st.file_uploader("📂 Upload your program_ratings.csv", type=["csv"])
 
+if uploaded_file is None and os.path.exists(default_path):
+    st.info("📁 Using default 'program_ratings.csv' file found in the app folder.")
+    uploaded_file = default_path
+
 if uploaded_file is not None:
-    # ✅ Read dataset safely
-    uploaded_file.seek(0)
-    df = pd.read_csv(io.StringIO(uploaded_file.getvalue().decode("utf-8")))
+    if isinstance(uploaded_file, str):  # local file path
+        df = pd.read_csv(uploaded_file)
+    else:
+        uploaded_file.seek(0)
+        df = pd.read_csv(io.StringIO(uploaded_file.getvalue().decode("utf-8")))
+
     st.subheader("📊 Program Ratings Dataset")
     st.dataframe(df)
 
-    ratings = read_csv_to_dict(uploaded_file)
+    ratings = read_csv_to_dict(uploaded_file if isinstance(uploaded_file, str) else io.StringIO(uploaded_file.getvalue().decode("utf-8")))
 
     if ratings:
         all_programs = list(ratings.keys())
         all_time_slots = list(range(6, 24))
         SCHEDULE_LENGTH = len(all_time_slots)
 
-        # ✅ Updated trials with your requested crossover & mutation rates
+        # ✅ Updated trials
         trials = [
             ("Trial 1", 0.80, 0.20, 0.02, 10),
             ("Trial 2", 0.70, 0.40, 0.05, 20),
@@ -149,9 +155,7 @@ if uploaded_file is not None:
                 random.seed(seed)
                 np.random.seed(seed)
 
-                # Add random noise for variation between trials
                 noisy_ratings = add_random_noise_to_ratings(ratings, noise_strength=noise)
-
                 schedule, fitness = genetic_algorithm(
                     noisy_ratings, all_programs, SCHEDULE_LENGTH,
                     crossover_rate=co, mutation_rate=mu
@@ -163,9 +167,9 @@ if uploaded_file is not None:
                 })
 
                 st.dataframe(df_result)
-                st.success(f"✅ Best Fitness Score: {fitness:.2f}")  # 👈 Two decimal places
+                st.success(f"✅ Best Fitness Score: {fitness:.2f}")
                 st.markdown("---")
     else:
         st.error("⚠️ Could not read program ratings correctly.")
 else:
-    st.warning("📂 Please upload your CSV file to begin.")
+    st.warning("📂 Please upload a CSV file or ensure 'program_ratings.csv' is in the app folder.")
