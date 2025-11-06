@@ -1,23 +1,25 @@
 import streamlit as st
 import pandas as pd
 import random
-import csv
 import numpy as np
-import os
+import io
 
 # ============================================
 # 📘 GENETIC ALGORITHM ENGINE
 # ============================================
 
-def read_csv_to_dict(file_path):
-    """Reads the uploaded CSV and returns {Program: [ratings]}"""
+def read_csv_to_dict(uploaded_file):
+    """Reads uploaded CSV (from Streamlit uploader) and returns {Program: [ratings]}"""
     program_ratings = {}
     try:
-        df = pd.read_csv(file_path)
+        uploaded_file.seek(0)  # Reset pointer to start
+        df = pd.read_csv(io.StringIO(uploaded_file.getvalue().decode("utf-8")))
+
         for _, row in df.iterrows():
             program = row['Type of Program']
             ratings = row.drop('Type of Program').tolist()
             program_ratings[program] = [float(x) for x in ratings]
+
     except Exception as e:
         st.error(f"Error reading CSV: {e}")
     return program_ratings
@@ -110,26 +112,29 @@ st.title("📺 Genetic Algorithm — TV Program Scheduling Optimizer")
 st.info("""
 ### 🧾 Instructions
 1. Upload your **`program_ratings.csv`** file using the uploader below.  
-2. Ensure it has this structure:
-   - First column: `Type of Program`
-   - Next columns: hourly ratings from **Hour 6** to **Hour 23**
-3. Click **“Run All 3 Trials”** to compare different GA configurations.
+2. The file must have:
+   - First column: **Type of Program**
+   - Next columns: **Hour 6** to **Hour 23**
+3. Click **“🚀 Run All 3 Trials”** to compare different GA configurations.
 """)
 
 uploaded_file = st.file_uploader("📂 Upload your program_ratings.csv", type=["csv"])
 
 if uploaded_file is not None:
-    ratings = read_csv_to_dict(uploaded_file)
-    df = pd.read_csv(uploaded_file)
+    # ✅ Read dataset safely
+    uploaded_file.seek(0)
+    df = pd.read_csv(io.StringIO(uploaded_file.getvalue().decode("utf-8")))
     st.subheader("📊 Program Ratings Dataset")
     st.dataframe(df)
+
+    ratings = read_csv_to_dict(uploaded_file)
 
     if ratings:
         all_programs = list(ratings.keys())
         all_time_slots = list(range(6, 24))
         SCHEDULE_LENGTH = len(all_time_slots)
 
-        # 3 experimental trials — you can tweak values below
+        # 3 experimental trials
         trials = [
             ("Trial 1", 0.85, 0.25, 0.02, 10),
             ("Trial 2", 0.70, 0.45, 0.05, 20),
@@ -144,6 +149,7 @@ if uploaded_file is not None:
                 random.seed(seed)
                 np.random.seed(seed)
 
+                # Add random noise for variation between trials
                 noisy_ratings = add_random_noise_to_ratings(ratings, noise_strength=noise)
 
                 schedule, fitness = genetic_algorithm(
