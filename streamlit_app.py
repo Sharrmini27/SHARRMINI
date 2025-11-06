@@ -2,15 +2,13 @@ import streamlit as st
 import pandas as pd
 import random
 import numpy as np
-import os
 
 # ============================================
 # 📘 GENETIC ALGORITHM FUNCTIONS
 # ============================================
 
-def read_csv_to_dict(file_path):
-    """Read CSV and convert to dictionary {Program: [ratings]}"""
-    df = pd.read_csv(file_path)
+def read_csv_to_dict(df):
+    """Convert DataFrame to dictionary {Program: [ratings]}"""
     program_ratings = {}
     for _, row in df.iterrows():
         program = row['Type of Program']
@@ -20,7 +18,6 @@ def read_csv_to_dict(file_path):
 
 
 def fitness_function(schedule, ratings_data):
-    """Calculate total fitness for a schedule."""
     return sum(
         ratings_data.get(program, [0])[i % len(ratings_data.get(program, [0]))]
         for i, program in enumerate(schedule)
@@ -32,7 +29,6 @@ def create_random_schedule(all_programs, schedule_length):
 
 
 def crossover(schedule1, schedule2):
-    """Single-point crossover."""
     if len(schedule1) < 2 or len(schedule2) < 2:
         return schedule1, schedule2
     point = random.randint(1, len(schedule1) - 1)
@@ -41,8 +37,7 @@ def crossover(schedule1, schedule2):
     return child1, child2
 
 
-def mutate(schedule, all_programs, mutation_strength=0.1):
-    """Mutate multiple random genes."""
+def mutate(schedule, all_programs):
     schedule_copy = schedule.copy()
     num_mutations = random.randint(1, 4)
     for _ in range(num_mutations):
@@ -52,7 +47,6 @@ def mutate(schedule, all_programs, mutation_strength=0.1):
 
 
 def add_random_noise_to_ratings(ratings_data, noise_strength=0.05):
-    """Add small noise to ratings."""
     noisy_data = {}
     for k, v in ratings_data.items():
         noisy_data[k] = [max(0, min(5, x + random.uniform(-noise_strength, noise_strength))) for x in v]
@@ -62,7 +56,6 @@ def add_random_noise_to_ratings(ratings_data, noise_strength=0.05):
 def genetic_algorithm(ratings_data, all_programs, schedule_length,
                       generations=100, population_size=50,
                       crossover_rate=0.8, mutation_rate=0.2, elitism_size=2):
-    """Core GA loop."""
     population = [create_random_schedule(all_programs, schedule_length) for _ in range(population_size)]
     best_schedule, best_fitness = None, 0
 
@@ -96,58 +89,67 @@ def genetic_algorithm(ratings_data, all_programs, schedule_length,
 
     return best_schedule, best_fitness
 
-
 # ============================================
 # 🌐 STREAMLIT APP
 # ============================================
 
-st.title("📺 Genetic Algorithm — TV Program Scheduling Optimizer (Auto Run)")
+st.title("📺 Genetic Algorithm — TV Program Scheduling Optimizer (Auto Run, No Upload Needed)")
 
-file_path = "program_ratings.csv"
+# Embedded default CSV data (replace this with your real table if needed)
+data = {
+    "Type of Program": ["News", "Sports", "Drama", "Comedy", "Reality"],
+    "6": [4.1, 3.8, 4.5, 3.9, 4.0],
+    "7": [4.0, 4.2, 4.6, 4.1, 4.3],
+    "8": [4.3, 4.0, 4.7, 4.2, 4.5],
+    "9": [4.5, 4.3, 4.8, 4.4, 4.7],
+    "10": [4.2, 4.4, 4.9, 4.3, 4.8],
+    "11": [4.0, 4.1, 4.7, 4.1, 4.5],
+    "12": [3.9, 4.0, 4.6, 3.9, 4.2],
+    "13": [3.8, 4.2, 4.5, 3.7, 4.1],
+    "14": [4.1, 4.3, 4.4, 3.9, 4.2],
+    "15": [4.2, 4.5, 4.6, 4.1, 4.3],
+    "16": [4.3, 4.6, 4.7, 4.2, 4.4],
+    "17": [4.4, 4.7, 4.8, 4.3, 4.5],
+    "18": [4.5, 4.8, 4.9, 4.4, 4.6],
+    "19": [4.6, 4.9, 5.0, 4.5, 4.7],
+    "20": [4.5, 4.8, 4.9, 4.4, 4.6],
+    "21": [4.3, 4.7, 4.8, 4.2, 4.5],
+    "22": [4.2, 4.6, 4.7, 4.1, 4.4],
+    "23": [4.0, 4.5, 4.6, 4.0, 4.3]
+}
 
-# Check file existence
-if not os.path.exists(file_path):
-    st.error("❌ 'program_ratings.csv' not found. Please make sure it’s in the same folder as streamlit_app.py.")
-else:
-    # Load data automatically
-    ratings = read_csv_to_dict(file_path)
-    df = pd.read_csv(file_path)
-    st.success("✅ Loaded program_ratings.csv successfully.")
+df = pd.DataFrame(data)
+ratings = read_csv_to_dict(df)
+all_programs = list(ratings.keys())
+all_time_slots = list(range(6, 24))
+SCHEDULE_LENGTH = len(all_time_slots)
 
-    st.subheader("📊 Program Ratings Dataset")
-    st.dataframe(df)
+# Trials (same values)
+trials = [
+    ("Trial 1", 0.8, 0.2, 0.02, 10),
+    ("Trial 2", 0.7, 0.4, 0.05, 20),
+    ("Trial 3", 0.5, 0.8, 0.08, 30),
+]
 
-    all_programs = list(ratings.keys())
-    all_time_slots = list(range(6, 24))
-    SCHEDULE_LENGTH = len(all_time_slots)
+# Run all trials automatically
+for label, co, mu, noise, seed in trials:
+    st.header(f"🔹 {label}")
+    st.write(f"**Crossover Rate:** {co} | **Mutation Rate:** {mu}")
 
-    # Trials (same values you already used)
-    trials = [
-        ("Trial 1", 0.8, 0.2, 0.02, 10),
-        ("Trial 2", 0.7, 0.4, 0.05, 20),
-        ("Trial 3", 0.5, 0.8, 0.08, 30),
-    ]
+    random.seed(seed)
+    np.random.seed(seed)
 
-    # Automatically run all 3 trials on load
-    for label, co, mu, noise, seed in trials:
-        st.header(f"🔹 {label}")
-        st.write(f"**Crossover Rate:** {co} | **Mutation Rate:** {mu}")
+    noisy_ratings = add_random_noise_to_ratings(ratings, noise_strength=noise)
+    schedule, fitness = genetic_algorithm(
+        noisy_ratings, all_programs, SCHEDULE_LENGTH,
+        crossover_rate=co, mutation_rate=mu
+    )
 
-        random.seed(seed)
-        np.random.seed(seed)
+    df_result = pd.DataFrame({
+        "Time Slot": [f"{t:02d}:00" for t in all_time_slots],
+        "Program": schedule
+    })
 
-        noisy_ratings = add_random_noise_to_ratings(ratings, noise_strength=noise)
-
-        schedule, fitness = genetic_algorithm(
-            noisy_ratings, all_programs, SCHEDULE_LENGTH,
-            crossover_rate=co, mutation_rate=mu
-        )
-
-        df_result = pd.DataFrame({
-            "Time Slot": [f"{t:02d}:00" for t in all_time_slots],
-            "Program": schedule
-        })
-
-        st.dataframe(df_result)
-        st.success(f"✅ Best Fitness Score: {fitness:.2f}")
-        st.markdown("---")
+    st.dataframe(df_result)
+    st.success(f"✅ Best Fitness Score: {fitness:.2f}")
+    st.markdown("---")
