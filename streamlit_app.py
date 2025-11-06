@@ -134,11 +134,11 @@ if uploaded_file is not None:
         all_time_slots = list(range(6, 24))
         SCHEDULE_LENGTH = len(all_time_slots)
 
-        # 3 experimental trials
+        # ✅ Updated 3 experimental trials (your new values)
         trials = [
-            ("Trial 1", 0.85, 0.25, 0.02, 10),
-            ("Trial 2", 0.70, 0.45, 0.05, 20),
-            ("Trial 3", 0.60, 0.60, 0.08, 30),
+            ("Trial 1", 0.80, 0.20, 0.02, 10),  # Changed crossover & mutation
+            ("Trial 2", 0.70, 0.40, 0.05, 20),  # Changed mutation
+            ("Trial 3", 0.60, 0.60, 0.08, 30),  # Kept same
         ]
 
         if st.button("🚀 Run All 3 Trials"):
