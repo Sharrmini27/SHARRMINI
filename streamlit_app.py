@@ -134,11 +134,11 @@ if uploaded_file is not None:
         all_time_slots = list(range(6, 24))
         SCHEDULE_LENGTH = len(all_time_slots)
 
-        # ✅ Updated 3 experimental trials (your new values)
+        # ✅ Updated trials with your requested crossover & mutation rates
         trials = [
-            ("Trial 1", 0.80, 0.20, 0.02, 10),  # Changed crossover & mutation
-            ("Trial 2", 0.70, 0.40, 0.05, 20),  # Changed mutation
-            ("Trial 3", 0.60, 0.60, 0.08, 30),  # Kept same
+            ("Trial 1", 0.80, 0.20, 0.02, 10),
+            ("Trial 2", 0.70, 0.40, 0.05, 20),
+            ("Trial 3", 0.60, 0.60, 0.08, 30),
         ]
 
         if st.button("🚀 Run All 3 Trials"):
@@ -163,7 +163,7 @@ if uploaded_file is not None:
                 })
 
                 st.dataframe(df_result)
-                st.success(f"✅ Best Fitness Score: {fitness:.4f}")
+                st.success(f"✅ Best Fitness Score: {fitness:.2f}")  # 👈 Two decimal places
                 st.markdown("---")
     else:
         st.error("⚠️ Could not read program ratings correctly.")
